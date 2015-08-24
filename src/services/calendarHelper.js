@@ -39,6 +39,7 @@ angular
             break;
 
           case 'month':
+          case 'week':
             eventStart.set({
               year: periodStart.year(),
               month: periodStart.month()
@@ -46,7 +47,7 @@ angular
             break;
 
           default:
-            throw new Error('Invalid value (' + event.recursOn + ') given for recurs on. Can only be year or month.');
+            throw new Error('Invalid value (' + event.recursOn + ') given for recurs on. Can only be year, month or week.');
         }
 
         eventEnd = adjustEndDateFromStartDiff(event.startsAt, eventStart, eventEnd);
@@ -62,6 +63,31 @@ angular
     }
 
     function filterEventsInPeriod(events, startPeriod, endPeriod) {
+      var weeklyEvents = events.filter(function(event) {
+        return event.recursOn === 'week' && !event.$cloned;
+      });
+
+      events = events.filter(function(event) {
+        return !event.$cloned;
+      });
+
+      startPeriod = moment(startPeriod);
+      endPeriod = moment(endPeriod);
+      weeklyEvents.forEach(function(event, index) {
+        for (var i = startPeriod.week(); i <= endPeriod.week(); i++) {
+          var eventClone = angular.copy(event);
+          eventClone.startsAt = moment(eventClone.startsAt).year(startPeriod.year()).week(i).toDate();
+          if (eventClone.endsAt) {
+            eventClone.endsAt = adjustEndDateFromStartDiff(event.startsAt, eventClone.startsAt, eventClone.endsAt).toDate();
+          }
+          if (i !== moment(event.startsAt).year(startPeriod.year()).week()) {
+            eventClone.$id = 'week-' + i + '-' + index;
+            Object.defineProperty(eventClone, '$cloned', {enumerable: false, value: true});
+            events.push(eventClone);
+          }
+        }
+      });
+
       return events.filter(function(event) {
         return eventIsInPeriod(event, startPeriod, endPeriod);
       });
