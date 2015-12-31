@@ -2,7 +2,7 @@
 
 angular
   .module('demo', ['mwl.calendar', 'ui.bootstrap', 'ngTouch', 'ngAnimate'])
-  .controller('MainCtrl', function ($uibModal, moment) {
+  .controller('MainCtrl', function ($uibModal, moment, $scope) {
 
     var vm = this;
 
@@ -16,7 +16,9 @@ angular
         startsAt: moment().startOf('week').subtract(2, 'days').add(8, 'hours').toDate(),
         endsAt: moment().startOf('week').add(1, 'week').add(9, 'hours').toDate(),
         draggable: true,
-        resizable: true
+        resizable: true,
+        totalAlloted: 5,
+        totalAllotment: 10,
       }, {
         title: '<i class="glyphicon glyphicon-asterisk"></i> <span class="text-primary">Another event</span>, with a <i>html</i> title',
         type: 'info',
@@ -54,6 +56,16 @@ angular
         endsAt: moment(start).add(2, 'hours').toDate()
       })
     }*/
+
+     $scope.toggled = function(open) {
+        //$log.log('Dropdown is now: ', open);
+      };
+
+      $scope.toggleDropdown = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.status.isopen = !$scope.status.isopen;
+      };
 
     function showModal(action, event) {
       $uibModal.open({
