@@ -50,13 +50,13 @@
                   decrement="vm.calendarView">
                   Previous
                 </button>
-                <button
+                <!-- <button
                   class="btn btn-default"
                   mwl-date-modifier
                   date="vm.calendarDay"
                   set-to-today>
                   Today
-                </button>
+                </button> -->
                 <button
                   class="btn btn-primary"
                   mwl-date-modifier
@@ -67,7 +67,7 @@
               </div>
             </div>
 
-            <br class="visible-xs visible-sm">
+            <!-- <br class="visible-xs visible-sm">
 
             <div class="col-md-6 text-center">
               <div class="btn-group">
@@ -76,11 +76,11 @@
                 <label class="btn btn-primary" ng-model="vm.calendarView" uib-btn-radio="'week'">Week</label>
                 <label class="btn btn-primary" ng-model="vm.calendarView" uib-btn-radio="'day'">Day</label>
               </div>
-            </div>
+            </div> -->
 
           </div>
 
-          <br>
+          <br> 
 
           <mwl-calendar
             events="vm.events"
@@ -93,11 +93,12 @@
             delete-event-html="'<i class=\'glyphicon glyphicon-remove\'></i>'"
             on-edit-event-click="vm.eventEdited(calendarEvent)"
             on-delete-event-click="vm.eventDeleted(calendarEvent)"
-            cell-is-open="vm.isCellOpen"
+            cell-is-open="false"
             day-view-start="06:00"
             day-view-end="22:00"
             day-view-split="30"
-            cell-modifier="vm.modifyCell(calendarCell)">
+            cell-modifier="vm.modifyCell(calendarCell)"
+            month-cell-template-url="test.html">
           </mwl-calendar>
 
           <br><br><br>
@@ -115,7 +116,46 @@
             </div>
           </script>
 
-          <h3 id="event-editor">
+          <script type="text/ng-template" id="test.html">
+            <div uib-dropdown>
+              <div mwl-droppable on-drop="vm.handleEventDrop(dropData.event, day.date)" class="cal-month-day {{ day.cssClass }} button-group" ng-class="{
+                    'cal-day-outmonth': !day.inMonth,
+                    'cal-day-inmonth': day.inMonth,
+                    'cal-day-weekend': day.isWeekend,
+                    'cal-day-past': day.isPast,
+                    'cal-day-today': day.isToday,
+                    'cal-day-future': day.isFuture
+                  }"  uib-dropdown-toggle > 
+                <div style="left: 39%;position: absolute;">
+                  <span data-cal-date ng-bind="day.label">
+                  </span>
+                </div>
+                <div ng-show="day.events.length > 0" class="pull-left"  style="left: 38%;position: absolute;bottom: 3px;   width: 45px;">
+                  <span style="color:green">{{day.events[0].totalAlloted}}</span> / <span style="color:red">{{day.events[0].totalAllotment}}</span>
+                </div>
+                <div id="cal-week-box" ng-if="$first && rowHovered">
+                    {{ vm.calendarConfig.i18nStrings.weekNumber.replace('{week}', day.date.week()) }}
+                </div>
+              </div>
+              <ul class="uib-dropdown-menu" template-url="dropdown.html" aria-labelledby="button-template-url">
+              </ul>
+            </div>
+        </script>
+        <script type="text/ng-template" id="hide.html">
+        </script>
+        <script type="text/ng-template" id="slider.html">
+        </script>
+        <script type="text/ng-template" id="dropdown.html">
+          <ul class="uib-dropdown-menu" role="menu" aria-labelledby="button-template-url">
+            <li role="menuitem"><a href="#">Action in Template</a></li>
+            <li role="menuitem"><a href="#">Another action in Template</a></li>
+            <li role="menuitem"><a href="#">Something else here</a></li>
+            <li class="divider"></li>
+            <li role="menuitem"><a href="#">Separated link in Template</a></li>
+          </ul>
+        </script>
+
+          <!-- <h3 id="event-editor">
             Edit events
             <button
               class="btn btn-primary pull-right"
@@ -217,7 +257,7 @@
               </tr>
             </tbody>
 
-          </table>
+          </table> -->
         </div>
       </div>
 
