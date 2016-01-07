@@ -159,6 +159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var vm = this;
 
 	    vm.events = vm.events || [];
+	    vm.allotmentdata = vm.allotmentdata || [];
 
 	    vm.changeView = function(view, newDay) {
 	      vm.view = view;
@@ -265,6 +266,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      restrict: 'EA',
 	      scope: {
 	        events: '=',
+	        allotmentdata: '=',
 	        view: '=',
 	        viewTitle: '=?',
 	        currentDay: '=',
@@ -321,7 +323,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        vm.currentDay,
 	        vm.dayViewStart,
 	        vm.dayViewEnd,
-	        vm.dayViewSplit
+	        vm.dayViewSplit,
+	        vm.allotmentdata
 	      );
 
 	    });
@@ -378,6 +381,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      require: '^mwlCalendar',
 	      scope: {
 	        events: '=',
+	        allotmentdata: '=',
 	        currentDay: '=',
 	        onEventClick: '=',
 	        onEventTimesChanged: '=',
@@ -486,7 +490,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      vm.weekDays = calendarHelper.getWeekDayNames();
 
-	      vm.view = calendarHelper.getMonthView(vm.events, vm.currentDay, vm.cellModifier);
+	      vm.view = calendarHelper.getMonthView(vm.events, vm.currentDay, vm.cellModifier, vm.allotmentdata);
 	      var rows = Math.floor(vm.view.length / 7);
 	      vm.monthOffsets = [];
 	      for (var i = 0; i < rows; i++) {
@@ -569,6 +573,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      require: '^mwlCalendar',
 	      scope: {
 	        events: '=',
+	        allotmentdata: '=',
 	        currentDay: '=',
 	        onEventClick: '=',
 	        onEditEventClick: '=',
@@ -632,6 +637,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      scope: {
 	        isOpen: '=',
 	        events: '=',
+	        allotmentdata: '=',
 	        onEventClick: '=',
 	        editEventHtml: '=',
 	        onEditEventClick: '=',
@@ -674,10 +680,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          vm.currentDay,
 	          vm.dayViewStart,
 	          vm.dayViewEnd,
-	          vm.dayViewSplit
+	          vm.dayViewSplit,
+	          vm.allotmentdata
 	        );
 	      } else {
-	        vm.view = calendarHelper.getWeekView(vm.events, vm.currentDay);
+	        vm.view = calendarHelper.getWeekView(vm.events, vm.currentDay, vm.allotmentdata);
 	      }
 	    });
 
@@ -733,6 +740,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      require: '^mwlCalendar',
 	      scope: {
 	        events: '=',
+	        allotmentdata: '=',
 	        currentDay: '=',
 	        onEventClick: '=',
 	        onEventTimesChanged: '=',
@@ -767,7 +775,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    vm.openMonthIndex = null;
 
 	    $scope.$on('calendar.refreshView', function() {
-	      vm.view = calendarHelper.getYearView(vm.events, vm.currentDay, vm.cellModifier);
+	      vm.view = calendarHelper.getYearView(vm.events, vm.currentDay, vm.cellModifier, vm.allotmentdata);
 
 	      //Auto open the calendar to the current day if set
 	      if (vm.cellIsOpen && vm.openMonthIndex === null) {
@@ -827,6 +835,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      require: '^mwlCalendar',
 	      scope: {
 	        events: '=',
+	        allotmentdata: '=',
 	        currentDay: '=',
 	        onEventClick: '=',
 	        onEventTimesChanged: '=',
