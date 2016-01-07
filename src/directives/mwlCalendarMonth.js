@@ -14,7 +14,7 @@ angular
 
       vm.weekDays = calendarHelper.getWeekDayNames();
 
-      vm.view = calendarHelper.getMonthView(vm.events, vm.currentDay, vm.cellModifier);
+      vm.view = calendarHelper.getMonthView(vm.events, vm.currentDay, vm.cellModifier, vm.allotmentdata);
       var rows = Math.floor(vm.view.length / 7);
       vm.monthOffsets = [];
       for (var i = 0; i < rows; i++) {
@@ -97,6 +97,7 @@ angular
       require: '^mwlCalendar',
       scope: {
         events: '=',
+        allotmentdata: '=',
         currentDay: '=',
         onEventClick: '=',
         onEditEventClick: '=',
