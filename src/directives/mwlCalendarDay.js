@@ -24,7 +24,8 @@ angular
         vm.currentDay,
         vm.dayViewStart,
         vm.dayViewEnd,
-        vm.dayViewSplit
+        vm.dayViewSplit,
+        vm.allotmentdata
       );
 
     });
@@ -81,6 +82,7 @@ angular
       require: '^mwlCalendar',
       scope: {
         events: '=',
+        allotmentdata: '=',
         currentDay: '=',
         onEventClick: '=',
         onEventTimesChanged: '=',
