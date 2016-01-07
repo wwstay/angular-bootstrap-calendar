@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Angular bootstrap calendar demo</title>
-    <meta name="description" content="Angular bootstrap calendar demo 2">
+    <meta name="description" content="Angular bootstrap calendar demo">
     <meta name="viewport" content="width=device-width">
     <style type="text/css">
       [ng-cloak] {
@@ -84,6 +84,7 @@
 
           <mwl-calendar
             events="vm.events"
+            allotmentdata ="vm.allotmentdata"
             view="vm.calendarView"
             view-title="vm.calendarTitle"
             current-day="vm.calendarDay"
@@ -131,7 +132,7 @@
                   </span>
                 </div>
                 <div ng-show="day.events.length > 0" class="pull-left"  style="left: 38%;position: absolute;bottom: 3px;   width: 45px;">
-                  <span style="color:green">{{day.events[0].totalAlloted}}</span> / <span style="color:red">{{day.events[0].totalAllotment}}</span>
+                  <span style="color:green">{{day.events[0].totalAlloted}}</span> / <span style="color:red">{{day.events[0].totalAllotment}}{{vm.allotmentdata}}</span>
                 </div>
                 <div id="cal-week-box" ng-if="$first && rowHovered">
                     {{ vm.calendarConfig.i18nStrings.weekNumber.replace('{week}', day.date.week()) }}
@@ -149,7 +150,7 @@
           <ul class="uib-dropdown-menu" role="menu" aria-labelledby="button-template-url">
             <li role="menuitem"><a href="#">Action in Template</a></li>
             <li role="menuitem"><a href="#">Another action in Template</a></li>
-            <li role="menuitem"><a href="#">Something else here</a></li>
+            <li role="menuitem"><a href="#">Something else here {{day.allotmentdata}}123</a></li>
             <li class="divider"></li>
             <li role="menuitem"><a href="#">Separated link in Template</a></li>
           </ul>
