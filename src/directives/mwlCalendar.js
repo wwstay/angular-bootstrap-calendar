@@ -9,6 +9,7 @@ angular
     var vm = this;
 
     vm.events = vm.events || [];
+    vm.allotmentdata = vm.allotmentdata || [];
 
     vm.changeView = function(view, newDay) {
       vm.view = view;
@@ -115,6 +116,7 @@ angular
       restrict: 'EA',
       scope: {
         events: '=',
+        allotmentdata: '=',
         view: '=',
         viewTitle: '=?',
         currentDay: '=',
