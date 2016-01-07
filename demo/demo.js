@@ -5,6 +5,7 @@ angular
   .controller('MainCtrl', function ($uibModal, moment, $scope) {
 
     var vm = this;
+    vm.allotmentdata = 'ravi';
 
     //These variables MUST be set as a minimum for the calendar to work
     vm.calendarView = 'month';
