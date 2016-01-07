@@ -17,12 +17,13 @@
     ng-bind="day.badgeTotal">
   </small>
 
-  <span
-    class="pull-right"
-    data-cal-date
-    ng-click="vm.calendarCtrl.drillDown(day.date)"
-    ng-bind="day.label">
-  </span>
+    <span
+      data-cal-date
+      ng-click="vm.calendarCtrl.drillDown(day.date)"
+      ng-bind="day.label">
+    </span>
+
+  
 
   <div class="cal-day-tick" ng-show="dayIndex === vm.openDayIndex && vm.view[vm.openDayIndex].events.length > 0">
     <i class="glyphicon glyphicon-chevron-up"></i>
