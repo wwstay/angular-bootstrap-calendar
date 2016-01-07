@@ -10,7 +10,7 @@ angular
     vm.openMonthIndex = null;
 
     $scope.$on('calendar.refreshView', function() {
-      vm.view = calendarHelper.getYearView(vm.events, vm.currentDay, vm.cellModifier);
+      vm.view = calendarHelper.getYearView(vm.events, vm.currentDay, vm.cellModifier, vm.allotmentdata);
 
       //Auto open the calendar to the current day if set
       if (vm.cellIsOpen && vm.openMonthIndex === null) {
@@ -70,6 +70,7 @@ angular
       require: '^mwlCalendar',
       scope: {
         events: '=',
+        allotmentdata: '=',
         currentDay: '=',
         onEventClick: '=',
         onEventTimesChanged: '=',
