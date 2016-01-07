@@ -34,6 +34,7 @@ angular
       scope: {
         isOpen: '=',
         events: '=',
+        allotmentdata: '=',
         onEventClick: '=',
         editEventHtml: '=',
         onEditEventClick: '=',
