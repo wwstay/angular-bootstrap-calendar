@@ -4,11 +4,11 @@ var angular = require('angular');
 
 angular
   .module('mwl.calendar')
-  .controller('MwlCalendarSlideBoxCtrl', function($sce, $scope, $timeout, calendarConfig) {
+  .controller('MwlCalendarSlideBoxCtrl', function($scope, $timeout, calendarConfig, calendarEventTitle) {
 
     var vm = this;
-    vm.$sce = $sce;
     vm.calendarConfig = calendarConfig;
+    vm.calendarEventTitle = calendarEventTitle;
 
     vm.isCollapsed = true;
     $scope.$watch('vm.isOpen', function(isOpen) {
@@ -19,11 +19,11 @@ angular
     });
 
   })
-  .directive('mwlCalendarSlideBox', function(calendarUseTemplates) {
+  .directive('mwlCalendarSlideBox', function() {
 
     return {
-      restrict: 'EA',
-      template: calendarUseTemplates ? require('./../templates/calendarSlideBox.html') : '',
+      restrict: 'E',
+      template: '<div mwl-dynamic-directive-template name="calendarSlideBox" overrides="vm.customTemplateUrls"></div>',
       replace: true,
       controller: 'MwlCalendarSlideBoxCtrl as vm',
       require: ['^?mwlCalendarMonth', '^?mwlCalendarYear'],
@@ -35,10 +35,9 @@ angular
         isOpen: '=',
         events: '=',
         onEventClick: '=',
-        editEventHtml: '=',
-        onEditEventClick: '=',
-        deleteEventHtml: '=',
-        onDeleteEventClick: '='
+        cell: '=',
+        customTemplateUrls: '=?',
+        templateScope: '='
       },
       bindToController: true
     };

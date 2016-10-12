@@ -19,8 +19,8 @@ describe('mwlDraggable directive', function() {
       'axis="\'y\'" ' +
       'snap-grid="{x: 30, y: 30}" ' +
       'on-drag-start="onDragStart()" ' +
-      'on-drag-end="onDragEnd(x, y)" ' +
-      'on-drag="onDrag(x, y)" ' +
+      'on-drag-end="onDragEnd(x / 30, y / 30)" ' +
+      'on-drag="onDrag(x / 30, y / 30)" ' +
       'drop-data="dropData"' +
       '></div>';
 
@@ -90,7 +90,7 @@ describe('mwlDraggable directive', function() {
 
     draggableOptions.onstart(event);
     draggableOptions.onmove(event);
-    expect(angular.element(event.target).css('z-index')).to.equal('1000');
+    expect(angular.element(event.target).css('z-index')).to.equal('50');
     expect(angular.element(event.target).attr('data-y')).to.equal('30');
     expect(angular.element(event.target).attr('data-x')).to.equal('0');
     expect(scope.onDrag).to.have.been.calledWith(0, 1);
@@ -119,6 +119,12 @@ describe('mwlDraggable directive', function() {
   it('should unset interact when scope gets destroyed', function() {
     scope.$destroy();
     expect(interactInstance.unset).to.have.been.called;
+  });
+
+  it('should disable dragging on the event', function() {
+    scope.draggable = false;
+    scope.$apply();
+    expect(interactInstance.draggable).to.have.been.calledWith({enabled: false});
   });
 
 });

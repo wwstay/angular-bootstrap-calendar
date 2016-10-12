@@ -6,11 +6,13 @@ beforeEach(angular.mock.module('mwl.calendar'));
 
 describe('calendarHelper', function() {
 
-  var calendarHelper, events, clock, calendarDay, calendarConfig;
+  var calendarHelper, events, clock, calendarDay, calendarConfig, $templateCache, $rootScope;
 
-  beforeEach(inject(function(_calendarHelper_, _calendarConfig_) {
+  beforeEach(inject(function(_calendarHelper_, _calendarConfig_, _$templateCache_, _$rootScope_) {
     calendarHelper = _calendarHelper_;
     calendarConfig = _calendarConfig_;
+    $templateCache = _$templateCache_;
+    $rootScope = _$rootScope_;
 
     events = [{
       title: 'Event 1',
@@ -133,6 +135,18 @@ describe('calendarHelper', function() {
 
     });
 
+    it('should not throw an error when recursOn is an empty string', function() {
+
+      expect(function() {
+        calendarHelper.eventIsInPeriod({
+          startsAt: new Date(),
+          endsAt: new Date(),
+          recursOn: ''
+        }, periodStart, periodEnd);
+      }).not.to.throw();
+
+    });
+
     it('should use the event start time as the end time when no end time is passed', function() {
 
       var isInPeriod = calendarHelper.eventIsInPeriod({
@@ -153,7 +167,7 @@ describe('calendarHelper', function() {
     });
 
     it('should get the days of the week starting at monday', inject(function() {
-      moment.locale('en', {
+      moment.locale('en_gb', {
         week: {
           dow: 1 // Monday is the first day of the week
         }
@@ -162,11 +176,7 @@ describe('calendarHelper', function() {
       var weekdays = calendarHelper.getWeekDayNames();
       expect(weekdays).to.eql(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
 
-      moment.locale('en', {
-        week: {
-          dow: 0 // Sunday is the first day of the week
-        }
-      });
+      moment.locale('en');
     }));
 
   });
@@ -222,7 +232,7 @@ describe('calendarHelper', function() {
     var monthView;
 
     beforeEach(function() {
-      monthView = calendarHelper.getMonthView(events, calendarDay, angular.noop);
+      monthView = calendarHelper.getMonthView(events, calendarDay, angular.noop).days;
     });
 
     it('should give back the correct amount of days for the calendar', function() {
@@ -335,9 +345,9 @@ describe('calendarHelper', function() {
       calendarConfig.displayAllMonthEvents = true;
       var eventsOffCalendar = [{
         startsAt: new Date('September 29, 2015 02:00:00'),
-        endsAt: new Date('September 29, 2015 02:00:00')
+        endsAt: new Date('September 29, 2015 03:00:00')
       }];
-      monthView = calendarHelper.getMonthView(eventsOffCalendar, calendarDay, angular.noop);
+      monthView = calendarHelper.getMonthView(eventsOffCalendar, calendarDay, angular.noop).days;
       expect(monthView[2].events).to.eql(eventsOffCalendar);
       calendarConfig.displayAllMonthEvents = false;
     });
@@ -435,7 +445,8 @@ describe('calendarHelper', function() {
     });
 
     it('should only contain events for that week', function() {
-      expect(weekView.events).to.eql([events[0], events[1]]);
+      expect(weekView.eventRows[0].row[0].event).to.eql(events[1]);
+      expect(weekView.eventRows[1].row[0].event).to.eql(events[0]);
     });
 
     describe('setting the correct span and offset', function() {
@@ -445,8 +456,8 @@ describe('calendarHelper', function() {
           startsAt: new Date(2015, 9, 20, 1),
           endsAt: new Date(2015, 9, 21, 15)
         }], calendarDay);
-        expect(weekView.events[0].daySpan).to.equal(2);
-        expect(weekView.events[0].dayOffset).to.equal(2);
+        expect(weekView.eventRows[0].row[0].span).to.equal(2);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(2);
       });
 
       it('should pass when the event starts before the current week view and ends within it', function() {
@@ -454,8 +465,8 @@ describe('calendarHelper', function() {
           startsAt: new Date(2015, 8, 20, 1),
           endsAt: new Date(2015, 9, 21, 15)
         }], calendarDay);
-        expect(weekView.events[0].daySpan).to.equal(4);
-        expect(weekView.events[0].dayOffset).to.equal(0);
+        expect(weekView.eventRows[0].row[0].span).to.equal(4);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(0);
       });
 
       it('should pass when the event starts before the current week view and ends after the end of the week', function() {
@@ -463,8 +474,8 @@ describe('calendarHelper', function() {
           startsAt: new Date(2015, 8, 20, 1),
           endsAt: new Date(2015, 10, 21, 15)
         }], calendarDay);
-        expect(weekView.events[0].daySpan).to.equal(7);
-        expect(weekView.events[0].dayOffset).to.equal(0);
+        expect(weekView.eventRows[0].row[0].span).to.equal(7);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(0);
       });
 
       it('should pass when the event starts within the current week but ends after it', function() {
@@ -472,8 +483,30 @@ describe('calendarHelper', function() {
           startsAt: new Date(2015, 9, 20, 1),
           endsAt: new Date(2015, 10, 21, 15)
         }], calendarDay);
-        expect(weekView.events[0].daySpan).to.equal(5);
-        expect(weekView.events[0].dayOffset).to.equal(2);
+        expect(weekView.eventRows[0].row[0].span).to.equal(5);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(2);
+      });
+
+      it('should pass when the event spans exactly one day', function() {
+        weekView = calendarHelper.getWeekView([{
+          startsAt: moment(new Date(2015, 9, 20)).startOf('day').toDate(),
+          endsAt: moment(new Date(2015, 9, 20)).endOf('day').toDate()
+        }], calendarDay);
+        expect(weekView.eventRows[0].row[0].span).to.equal(1);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(2);
+      });
+
+    });
+
+    describe('recurring events', function() {
+
+      it('should display recuring events', function() {
+        weekView = calendarHelper.getWeekView([{
+          startsAt: new Date(2016, 0, 9, 1),
+          recursOn: 'month'
+        }], new Date(2016, 1, 9, 1));
+        expect(weekView.eventRows[0].row[0].span).to.equal(1);
+        expect(weekView.eventRows[0].row[0].offset).to.equal(2);
       });
 
     });
@@ -494,39 +527,49 @@ describe('calendarHelper', function() {
       }, {
         startsAt: new Date('October 20, 2015 11:00:00'),
         endsAt: new Date('October 20, 2015 12:00:00')
+      }, {
+        startsAt: new Date('October 20, 2015 22:00:00'),
+        endsAt: new Date('October 20, 2015 23:30:00')
       }];
 
       dayView = calendarHelper.getDayView(
         dayEvents,
         calendarDay,
         '00:00',
-        '23:00',
+        '23:59',
         30
       );
     });
 
     it('should only contain events for that day', function() {
-      expect(dayView).to.eql(dayEvents);
+      expect(dayView.events[0].event).to.eql(dayEvents[0]);
+      expect(dayView.events[1].event).to.eql(dayEvents[1]);
+      expect(dayView.events[2].event).to.eql(dayEvents[2]);
+      expect(dayView.events[3].event).to.eql(dayEvents[3]);
     });
 
     it('should set the top to 0 if the event starts before the start of the day', function() {
-      expect(dayView[0].top).to.equal(0);
+      expect(dayView.events[0].top).to.equal(0);
     });
 
     it('should set the top correctly if the event starts after the start of the day', function() {
-      expect(dayView[1].top).to.equal(658);
+      expect(dayView.events[1].top).to.equal(660);
     });
 
     it('should set the height correctly if the event finishes after the end of the day', function() {
-      expect(dayView[1].height).to.equal(782);
+      expect(dayView.events[1].height).to.equal(779);
     });
 
     it('should set the height correctly if the event finishes before the end of the day', function() {
-      expect(dayView[2].height).to.equal(60);
+      expect(dayView.events[2].height).to.equal(60);
+    });
+
+    it('should set the height correctly of events that finish within an hour after the day view end', function() {
+      expect(dayView.events[3].height).to.equal(90);
     });
 
     it('should never exceed the maximum height of the calendar', function() {
-      expect(dayView[0].height).to.equal(1440);
+      expect(dayView.events[0].height).to.equal(1439);
     });
 
     it('should remove events that start and end at the same time', function() {
@@ -537,30 +580,32 @@ describe('calendarHelper', function() {
         }],
         calendarDay,
         '00:00',
-        '23:00',
+        '23:59',
         30
       );
-      expect(dayView).to.eql([]);
+      expect(dayView.events).to.eql([]);
     });
 
     it('should move events across if there are multiple ones on the same line', function() {
-      expect(dayView[0].left).to.equal(0);
-      expect(dayView[1].left).to.equal(150);
-      expect(dayView[2].left).to.equal(300);
+      expect(dayView.events[0].left).to.equal(0);
+      expect(dayView.events[1].left).to.equal(150);
+      expect(dayView.events[2].left).to.equal(300);
     });
 
   });
 
   describe('getDayViewHeight', function() {
-    var dayViewHeight;
-
-    beforeEach(function() {
-      dayViewHeight = calendarHelper.getDayViewHeight('01:00', '22:00', 10);
-    });
 
     it('should calculate the height of the day view', function() {
-      expect(dayViewHeight).to.equal(3962);
+      var dayViewHeight = calendarHelper.getDayViewHeight('01:00', '22:59', 10);
+      expect(dayViewHeight).to.equal(3960);
     });
+
+    it('should support partial hours', function() {
+      var dayViewHeight = calendarHelper.getDayViewHeight('01:00', '22:29', 10);
+      expect(dayViewHeight).to.equal(3870);
+    });
+
   });
 
   describe('getWeekViewWithTimes', function() {
@@ -582,7 +627,7 @@ describe('calendarHelper', function() {
         dayEvents,
         calendarDay,
         '00:00',
-        '23:00',
+        '23:59',
         30
       );
     });
@@ -590,40 +635,42 @@ describe('calendarHelper', function() {
     it('should calculate the week view with times', function() {
       var expectedEventsWeekView = [
         {
-          startsAt: new Date('October 19, 2015 11:00:00'),
-          endsAt: new Date('October 21, 2015 11:00:00'),
-          daySpan: 3,
-          dayOffset: 1,
-          top: 658,
-          height: 782,
-          left: 0
+          event: {
+            startsAt: new Date('October 19, 2015 11:00:00'),
+            endsAt: new Date('October 21, 2015 11:00:00')
+          },
+          offset: 1,
+          top: 660
         },
         {
-          startsAt: new Date('October 20, 2015 11:00:00'),
-          endsAt: new Date('October 21, 2015 11:00:00'),
-          daySpan: 2,
-          dayOffset: 2,
-          top: 658,
-          height: 782,
-          left: 0
+          event: {
+            startsAt: new Date('October 20, 2015 11:00:00'),
+            endsAt: new Date('October 21, 2015 11:00:00')
+          },
+          offset: 2,
+          top: 660,
         },
         {
-          startsAt: new Date('October 20, 2015 11:00:00'),
-          endsAt: new Date('October 20, 2015 12:00:00'),
-          daySpan: 1,
-          dayOffset: 2,
-          top: 658,
-          height: 60,
-          left: 150
+          event: {
+            startsAt: new Date('October 20, 2015 11:00:00'),
+            endsAt: new Date('October 20, 2015 12:00:00')
+          },
+          offset: 2,
+          top: 660,
         }
       ];
-
       expect(weekViewWithTimes.days.length).to.equal(7);
-      expect(weekViewWithTimes.events).to.eql(expectedEventsWeekView);
+      expect(weekViewWithTimes.eventRows[0].row).to.eql(expectedEventsWeekView);
     });
   });
 
   describe('formatDate', function() {
+
+    var defaultFormat;
+    beforeEach(function() {
+      defaultFormat = calendarConfig.dateFormatter;
+    });
+
     it('should format a date using angular dateFilter', function() {
       calendarConfig.dateFormatter = 'angular';
       var formattedDate = calendarHelper.formatDate(new Date(), 'yyyy-mm-dd');
@@ -634,6 +681,33 @@ describe('calendarHelper', function() {
       calendarConfig.dateFormatter = 'moment';
       var formattedDate = calendarHelper.formatDate(new Date(), 'YYYY-MM-DD');
       expect(formattedDate).to.equal('2015-10-20');
+    });
+
+    it('should throw an error when given an invalid date formatter', function() {
+      calendarConfig.dateFormatter = 'unknown';
+      expect(function() {
+        calendarHelper.formatDate(new Date(), 'YYYY-MM-DD');
+      }).to.throw();
+    });
+
+    afterEach(function() {
+      calendarConfig.dateFormatter = defaultFormat;
+    });
+
+  });
+
+  describe('loadTemplates', function() {
+
+    it('should return a promise with all loaded templates', function(done) {
+      calendarConfig.templates = {
+        template: 'test.html'
+      };
+      $templateCache.put('test.html', 'contents');
+      calendarHelper.loadTemplates().then(function(result) {
+        expect(result).to.deep.equal(['contents']);
+        done();
+      });
+      $rootScope.$apply();
     });
 
   });

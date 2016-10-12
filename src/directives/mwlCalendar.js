@@ -1,21 +1,27 @@
 'use strict';
 
 var angular = require('angular');
+var LOG_PREFIX = 'Bootstrap calendar:';
 
 angular
   .module('mwl.calendar')
-  .controller('MwlCalendarCtrl', function($scope, $log, $timeout, $attrs, $locale, moment, calendarTitle) {
+  .controller('MwlCalendarCtrl', function($scope, $log, $timeout, $attrs, $locale, moment, calendarTitle, calendarHelper) {
 
     var vm = this;
+
+    if (vm.slideBoxDisabled) {
+      $log.warn(LOG_PREFIX, 'The `slide-box-disabled` option is deprecated and will be removed in the next release. ' +
+        'Instead set `cell-auto-open-disabled` to true');
+    }
 
     vm.events = vm.events || [];
 
     vm.changeView = function(view, newDay) {
       vm.view = view;
-      vm.currentDay = newDay;
+      vm.viewDate = newDay;
     };
 
-    vm.drillDown = function(date) {
+    vm.dateClicked = function(date) {
 
       var rawDate = moment(date).toDate();
 
@@ -25,30 +31,28 @@ angular
         week: 'day'
       };
 
-      if (vm.onDrillDownClick({calendarDate: rawDate, calendarNextView: nextView[vm.view]}) !== false) {
+      if (vm.onViewChangeClick({calendarDate: rawDate, calendarNextView: nextView[vm.view]}) !== false) {
         vm.changeView(nextView[vm.view], rawDate);
       }
 
     };
 
-    var previousDate = moment(vm.currentDay);
+    var previousDate = moment(vm.viewDate);
     var previousView = vm.view;
 
     function eventIsValid(event) {
       if (!event.startsAt) {
-        $log.warn('Bootstrap calendar: ', 'Event is missing the startsAt field', event);
+        $log.warn(LOG_PREFIX, 'Event is missing the startsAt field', event);
+      } else if (!angular.isDate(event.startsAt)) {
+        $log.warn(LOG_PREFIX, 'Event startsAt should be a javascript date object. Do `new Date(event.startsAt)` to fix it.', event);
       }
 
-      if (!angular.isDate(event.startsAt)) {
-        $log.warn('Bootstrap calendar: ', 'Event startsAt should be a javascript date object', event);
-      }
-
-      if (angular.isDefined(event.endsAt)) {
+      if (event.endsAt) {
         if (!angular.isDate(event.endsAt)) {
-          $log.warn('Bootstrap calendar: ', 'Event endsAt should be a javascript date object', event);
+          $log.warn(LOG_PREFIX, 'Event endsAt should be a javascript date object. Do `new Date(event.endsAt)` to fix it.', event);
         }
         if (moment(event.startsAt).isAfter(moment(event.endsAt))) {
-          $log.warn('Bootstrap calendar: ', 'Event cannot start after it finishes', event);
+          $log.warn(LOG_PREFIX, 'Event cannot start after it finishes', event);
         }
       }
 
@@ -58,16 +62,16 @@ angular
     function refreshCalendar() {
 
       if (calendarTitle[vm.view] && angular.isDefined($attrs.viewTitle)) {
-        vm.viewTitle = calendarTitle[vm.view](vm.currentDay);
+        vm.viewTitle = calendarTitle[vm.view](vm.viewDate);
       }
 
       vm.events = vm.events.filter(eventIsValid).map(function(event, index) {
-        Object.defineProperty(event, '$id', {enumerable: false, configurable: true, value: index});
+        event.calendarEventId = index;
         return event;
       });
 
       //if on-timespan-click="calendarDay = calendarDate" is set then don't update the view as nothing needs to change
-      var currentDate = moment(vm.currentDay);
+      var currentDate = moment(vm.viewDate);
       var shouldUpdate = true;
       if (
         previousDate.clone().startOf(vm.view).isSame(currentDate.clone().startOf(vm.view)) &&
@@ -87,52 +91,59 @@ angular
       }
     }
 
-    var eventsWatched = false;
+    calendarHelper.loadTemplates().then(function() {
+      vm.templatesLoaded = true;
 
-    //Refresh the calendar when any of these variables change.
-    $scope.$watchGroup([
-      'vm.currentDay',
-      'vm.view',
-      'vm.cellIsOpen',
-      function() {
-        return moment.locale() + $locale.id; //Auto update the calendar when the locale changes
-      }
-    ], function() {
-      if (!eventsWatched) {
-        eventsWatched = true;
-        //need to deep watch events hence why it isn't included in the watch group
-        $scope.$watch('vm.events', refreshCalendar, true); //this will call refreshCalendar when the watcher starts (i.e. now)
-      } else {
-        refreshCalendar();
-      }
+      var eventsWatched = false;
+
+      //Refresh the calendar when any of these variables change.
+      $scope.$watchGroup([
+        'vm.viewDate',
+        'vm.view',
+        'vm.cellIsOpen',
+        function() {
+          return moment.locale() + $locale.id; //Auto update the calendar when the locale changes
+        }
+      ], function() {
+        if (!eventsWatched) {
+          eventsWatched = true;
+          //need to deep watch events hence why it isn't included in the watch group
+          $scope.$watch('vm.events', refreshCalendar, true); //this will call refreshCalendar when the watcher starts (i.e. now)
+        } else {
+          refreshCalendar();
+        }
+      });
+
+    }).catch(function(err) {
+      $log.error('Could not load all calendar templates', err);
     });
 
   })
-  .directive('mwlCalendar', function(calendarUseTemplates) {
+  .directive('mwlCalendar', function() {
 
     return {
-      template: calendarUseTemplates ? require('./../templates/calendar.html') : '',
-      restrict: 'EA',
+      template: '<div mwl-dynamic-directive-template name="calendar" overrides="vm.customTemplateUrls"></div>',
+      restrict: 'E',
       scope: {
         events: '=',
         view: '=',
         viewTitle: '=?',
-        currentDay: '=',
-        editEventHtml: '=',
-        deleteEventHtml: '=',
-        cellIsOpen: '=',
+        viewDate: '=',
+        cellIsOpen: '=?',
+        cellAutoOpenDisabled: '=?',
+        slideBoxDisabled: '=?',
+        customTemplateUrls: '=?',
         onEventClick: '&',
         onEventTimesChanged: '&',
-        onEditEventClick: '&',
-        onDeleteEventClick: '&',
         onTimespanClick: '&',
-        onDrillDownClick: '&',
+        onDateRangeSelect: '&?',
+        onViewChangeClick: '&',
         cellModifier: '&',
         dayViewStart: '@',
         dayViewEnd: '@',
         dayViewSplit: '@',
-        monthCellTemplateUrl: '@',
-        monthCellEventsTemplateUrl: '@'
+        dayViewEventChunkSize: '@',
+        templateScope: '=?'
       },
       controller: 'MwlCalendarCtrl as vm',
       bindToController: true

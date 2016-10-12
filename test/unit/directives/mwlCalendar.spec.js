@@ -8,7 +8,10 @@ describe('mwlCalendar directive', function() {
     element,
     scope,
     $rootScope,
+    $q,
+    $log,
     $timeout,
+    calendarHelper,
     directiveScope,
     MwlCalendarMonthCtrl,
     clock,
@@ -17,15 +20,13 @@ describe('mwlCalendar directive', function() {
       'events="vm.events" ' +
       'view="vm.calendarView" ' +
       'view-title="vm.calendarTitle" ' +
-      'current-day="vm.calendarDay" ' +
+      'view-date="vm.calendarDay" ' +
       'on-event-click="vm.eventClicked(calendarEvent)" ' +
       'on-event-times-changed="vm.eventTimesChanged(calendarEvent); ' +
       'calendarEvent.startsAt = calendarNewEventStart; calendarEvent.endsAt = calendarNewEventEnd" ' +
-      'on-edit-event-click="vm.eventEdited(calendarEvent)" ' +
-      'on-delete-event-click="vm.eventDeleted(calendarEvent)" ' +
       'cell-is-open="true" ' +
       'day-view-start="06:00" ' +
-      'day-view-end="22:00" ' +
+      'day-view-end="22:59" ' +
       'day-view-split="30" ' +
       'cell-modifier="vm.modifyCell(calendarCell)"> ' +
     '</mwl-calendar>';
@@ -88,12 +89,16 @@ describe('mwlCalendar directive', function() {
 
   beforeEach(angular.mock.module('mwl.calendar'));
 
-  beforeEach(angular.mock.inject(function($compile, _$rootScope_, _$timeout_) {
+  beforeEach(angular.mock.inject(function($compile, _$rootScope_, _$timeout_, _$q_, _calendarHelper_, _$log_) {
+    $q = _$q_;
     $rootScope = _$rootScope_;
     $timeout = _$timeout_;
+    calendarHelper = _calendarHelper_;
     scope = $rootScope.$new();
+    $log = _$log_;
     scope.vm = {};
     clock = sinon.useFakeTimers(new Date(2015, 4, 1).getTime());
+    calendarHelper.loadTemplates = sinon.stub().returns($q.when());
     prepareScope(scope.vm);
 
     element = $compile(template)(scope);
@@ -107,14 +112,14 @@ describe('mwlCalendar directive', function() {
     var myDate = new Date();
     MwlCalendarCtrl.changeView('day', myDate);
     expect(MwlCalendarCtrl.view).to.equal('day');
-    expect(MwlCalendarCtrl.currentDay).to.equal(myDate);
+    expect(MwlCalendarCtrl.viewDate).to.equal(myDate);
   });
 
-  it('should allow to drill down', function() {
+  it('should change the current view', function() {
     var myDate = new Date();
-    MwlCalendarCtrl.drillDown(myDate);
+    MwlCalendarCtrl.dateClicked(myDate);
     expect(MwlCalendarCtrl.view).to.equal('day');
-    expect(MwlCalendarCtrl.currentDay).to.eql(myDate);
+    expect(MwlCalendarCtrl.viewDate).to.eql(myDate);
   });
 
   it('should refresh the calendar when appropriate', function() {
@@ -135,6 +140,49 @@ describe('mwlCalendar directive', function() {
     MwlCalendarMonthCtrl.view.forEach(function(day) {
       expect(day.events).to.eql([]);
     });
+  });
+
+  it('should load all templates', function() {
+    expect(calendarHelper.loadTemplates).to.have.been.calledOnce;
+  });
+
+  it('should set templates loaded to true', function() {
+    expect(MwlCalendarCtrl.templatesLoaded).to.be.true;
+  });
+
+  it('should log a warning if the event starts at is not set', function() {
+    $log.warn = sinon.spy();
+    scope.vm.events = [{title: 'title'}];
+    scope.$apply();
+    expect($log.warn).to.have.been.called;
+  });
+
+  it('should log a warning if the event starts at is not a valid date object', function() {
+    $log.warn = sinon.spy();
+    scope.vm.events = [{title: 'title', startsAt: '2016-06-01'}];
+    scope.$apply();
+    expect($log.warn).to.have.been.called;
+  });
+
+  it('should log a warning if the event ends at is not a valid date object', function() {
+    $log.warn = sinon.spy();
+    scope.vm.events = [{title: 'title', startsAt: new Date(), endsAt: '2016-01-01'}];
+    scope.$apply();
+    expect($log.warn).to.have.been.called;
+  });
+
+  it('should not log a warning if the event ends at is set to a falsey value', function() {
+    $log.warn = sinon.spy();
+    scope.vm.events = [{title: 'title', startsAt: new Date(), endsAt: null}];
+    scope.$apply();
+    expect($log.warn).not.to.have.been.called;
+  });
+
+  it('should log a warning if the event ends after it starts', function() {
+    $log.warn = sinon.spy();
+    scope.vm.events = [{title: 'title', startsAt: new Date(), endsAt: new Date(Date.now() - 1)}];
+    scope.$apply();
+    expect($log.warn).to.have.been.called;
   });
 
   afterEach(function() {

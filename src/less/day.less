@@ -9,6 +9,22 @@
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     border-bottom: thin dashed @borderColor;
+
+    .cal-day-hour-part-time {
+      width: 60px;
+      text-align: center;
+      float: left;
+    }
+
+    .cal-day-hour-part-spacer {
+      height: 30px;
+      display: inline-block;
+    }
+
+    &:hover { background-color: @dayHover; }
+  }
+  .cal-day-hour-part-selected {
+    background-color: @borderColor;
   }
   .cal-day-hour {
     .day-highlight {
@@ -55,24 +71,5 @@
     margin: 1px 1px;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .day-highlight.dh-event-important {
-    border: 1px solid @eventImportantColor;
-  }
-  .day-highlight.dh-event-warning {
-    border: 1px solid @eventWarningColor;
-  }
-  .day-highlight.dh-event-info {
-    border: 1px solid @eventInfoColor;
-  }
-  .day-highlight.dh-event-inverse {
-    border: 1px solid @eventInverseColor;
-  }
-  .day-highlight.dh-event-success {
-    border: 1px solid @eventSuccessColor;
-  }
-  .day-highlight.dh-event-special {
-    background-color: @eventHiliteSpecial;
-    border: 1px solid @eventSpecialColor;
   }
 }

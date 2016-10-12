@@ -4,14 +4,13 @@ var angular = require('angular');
 
 angular
   .module('mwl.calendar')
-  .controller('MwlCalendarDayCtrl', function($scope, $sce, moment, calendarHelper, calendarConfig) {
+  .controller('MwlCalendarDayCtrl', function($scope, moment, calendarHelper, calendarEventTitle) {
 
     var vm = this;
 
-    vm.calendarConfig = calendarConfig;
-    vm.$sce = $sce;
+    vm.calendarEventTitle = calendarEventTitle;
 
-    $scope.$on('calendar.refreshView', function() {
+    function refreshView() {
       vm.dayViewSplit = vm.dayViewSplit || 30;
       vm.dayViewHeight = calendarHelper.getDayViewHeight(
         vm.dayViewStart,
@@ -19,15 +18,27 @@ angular
         vm.dayViewSplit
       );
 
-      vm.view = calendarHelper.getDayView(
+      var view = calendarHelper.getDayView(
         vm.events,
-        vm.currentDay,
+        vm.viewDate,
         vm.dayViewStart,
         vm.dayViewEnd,
         vm.dayViewSplit
       );
 
-    });
+      vm.allDayEvents = view.allDayEvents;
+      vm.nonAllDayEvents = view.events;
+      vm.viewWidth = view.width + 62;
+
+    }
+
+    $scope.$on('calendar.refreshView', refreshView);
+
+    $scope.$watchGroup([
+      'vm.dayViewStart',
+      'vm.dayViewEnd',
+      'vm.dayViewSplit'
+    ], refreshView);
 
     vm.eventDragComplete = function(event, minuteChunksMoved) {
       var minutesDiff = minuteChunksMoved * vm.dayViewSplit;
@@ -73,21 +84,26 @@ angular
     };
 
   })
-  .directive('mwlCalendarDay', function(calendarUseTemplates) {
+  .directive('mwlCalendarDay', function() {
 
     return {
-      template: calendarUseTemplates ? require('./../templates/calendarDayView.html') : '',
-      restrict: 'EA',
+      template: '<div mwl-dynamic-directive-template name="calendarDayView" overrides="vm.customTemplateUrls"></div>',
+      restrict: 'E',
       require: '^mwlCalendar',
       scope: {
         events: '=',
-        currentDay: '=',
+        viewDate: '=',
         onEventClick: '=',
         onEventTimesChanged: '=',
         onTimespanClick: '=',
+        onDateRangeSelect: '=',
         dayViewStart: '=',
         dayViewEnd: '=',
-        dayViewSplit: '='
+        dayViewSplit: '=',
+        dayViewEventChunkSize: '=',
+        customTemplateUrls: '=?',
+        cellModifier: '=',
+        templateScope: '='
       },
       controller: 'MwlCalendarDayCtrl as vm',
       bindToController: true
